@@ -186,8 +186,14 @@
                 // in case of having to convert the texture
                 if(EXRLoader.TO_CUBEMAP && to_cubemap)
                 {
-                    loader.toCubemap(texture);
-                    document.querySelector("#loading").style.display = "none";
+                    loader.toCubemap(texture, null, function(tex){
+                      renderer.textures["cubemap_tex"] = tex;
+                      skybox.texture = "cubemap_tex";
+                      skybox.shader = "skyboxExpo";
+                      skybox.flags.visible = true;
+                      plane.flags.visible = false;
+                      document.querySelector("#loading").style.display = "none";
+                    });
                     return;
                 }
                 // from spheremap images directly

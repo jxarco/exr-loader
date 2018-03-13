@@ -185,7 +185,7 @@ EXRLoader.prototype.generateTex = function( texParams )
     return texture;
 }
 
-EXRLoader.prototype.toCubemap = function( tex, output )
+EXRLoader.prototype.toCubemap = function( tex, output, callback )
 {
     console.log("Converting to cubemap...");
     var size = EXRLoader.CUBE_MAP_SIZE || 512;
@@ -233,11 +233,8 @@ EXRLoader.prototype.toCubemap = function( tex, output )
 
     gl.bindTexture(cubemap_texture.texture_type, null); //disable
 
-    // magic
-    renderer.textures["cubemap_tex"] = cubemap_texture;
-    skybox.texture = "cubemap_tex";
-    skybox.shader = "skyboxExpo";
-    skybox.flags.visible = true;
+    if(callback)
+      callback(cubemap_texture);
 }
 
 EXRLoader.prototype.getCubemapFaces = function(size, width, height, pixelData)
