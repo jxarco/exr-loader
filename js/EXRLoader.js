@@ -308,17 +308,8 @@ function isPowerOfTwo(v)
 // read exr file and run the EXRLoader
 function readFile( file, to_cubemap)
 {
-		document.querySelector("#loading").innerHTML = "Loading...";
-    document.querySelector("#loading").style.display = "block";
-
-    var url = "";
-    if(!file)
-        url = "../textures/" + document.getElementById("exr-input").value;
-    else
-        url = "../textures/" + file;
-
     var xhr = new XMLHttpRequest();
-    xhr.open( "GET", url, true );
+    xhr.open( "GET", file, true );
     xhr.responseType = "arraybuffer";
 
     xhr.onload = function( e ) {

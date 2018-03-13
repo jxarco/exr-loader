@@ -90,9 +90,9 @@
                 'Convert SM': EXRLoader.TO_CUBEMAP,
                 'Gen. CM size': EXRLoader.CUBE_MAP_SIZE,
 
-                'Cube map': function(){ readFile("cubemap.exr") },
-                'Sphere map': function(){ readFile("water.exr") },
-                'CM conversion': function(){ readFile("water.exr", true) }
+                'Cube map': function(){ showLoading(); readFile("../textures/cubemap.exr") },
+                'Sphere map': function(){ showLoading(); readFile("../textures/water.exr") },
+                'CM conversion': function(){ showLoading(); readFile("../textures/water.exr", true) }
             };
 
             var gui = new dat.GUI();
@@ -154,6 +154,12 @@
                 camera.position = vec3.scale( camera.position, camera.position, e.wheel < 0 ? 1.05 : 0.95 );
             }
         }
+
+				function showLoading()
+				{
+					document.querySelector("#loading").innerHTML = "Loading...";
+			    document.querySelector("#loading").style.display = "block";
+				}
 
         function load( buffer, to_cubemap )
         {
