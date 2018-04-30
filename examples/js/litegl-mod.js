@@ -5927,7 +5927,7 @@ Texture.cubemapFromImages = function(images, options) {
 	texture.bind();
 
 	try {
-
+        console.log(images);
 		for(var i = 0; i < 6; i++)
 			gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X+i, 0, texture.format, texture.format, texture.type, images[i]);
 		texture.data = images;

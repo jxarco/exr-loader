@@ -1,0 +1,11 @@
+#progress {
+    display: block;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    width: 0%;
+    position: absolute;
+    background-color: rgba(110, 255, 140, 0.75);
+    z-index: 1000;
+}

@@ -252,12 +252,43 @@
 					return faces;
 				}
 
+                function getImages(size, width, height, pixelData)
+				{
+					var faces = getFaces(size, width, height, pixelData),
+                        images = [];
+
+                    for(var i = 0; i < faces.length; i++)
+                    {
+                        // create off-screen canvas element
+                        var canvas = document.createElement('canvas'),
+                            ctx = canvas.getContext('2d');
+
+                        canvas.width = width / 4;
+                        canvas.height = height / 3;
+
+                        // create imageData object
+                        var idata = ctx.createImageData(width, height);
+
+                        // set our buffer as source
+                        idata.data.set(faces[i]);
+
+                        // update canvas with new data
+                        ctx.putImageData(idata, 0, 0);
+                        images.push( canvas );
+                    }
+
+					return images;
+				}
+
 				function generateTexture(width, height, pixelFormat, pixelData, texData)
 				{
 
                     var square_length = pixelData.length / 12;
+
+                    // get cubemap texture
+                    // method 1 with litegl mod (works)
+
                     var faces = getFaces(square_length, width, height, pixelData);
-                    // cubemap texture
                     width /= 4;
                     height /= 3;
                     var cubemapTexture = new GL.Texture( width, height, {
@@ -268,12 +299,16 @@
                         cubemap_faces_data: faces
                     });
 
+                    // method 2
+                    /*
+                    var images = getImages(square_length, width, height, pixelData);
+                    var cubemapTexture = GL.Texture.cubemapFromImages(images);
+                    console.log(cubemapTexture);
+                    */
                     cubemapTexture.wrapS = texData.wrapS ? texData.wrapS : gl.CLAMP_TO_EDGE;
                     cubemapTexture.wrapT = texData.wrapT ? texData.wrapT : gl.CLAMP_TO_EDGE;
                     cubemapTexture.magFilter = texData.magFilter ? texData.magFilter : gl.LINEAR;
                     cubemapTexture.minFilter = texData.minFilter ? texData.minFilter : gl.LINEAR_MIPMAP_LINEAR;
-
-										// console.log(cubemapTexture);
 
                     renderer.textures["skybox"] = cubemapTexture;
                     skybox.texture = "skybox";

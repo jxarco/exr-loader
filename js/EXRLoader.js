@@ -15,13 +15,16 @@ EXRLoader.CUBE_MAP_NEGATIVE_X = 3;
 EXRLoader.CUBE_MAP_NEGATIVE_Y = 4;
 EXRLoader.CUBE_MAP_NEGATIVE_Z = 5;
 
-EXRLoader.TO_CUBEMAP = true;
-EXRLoader.EM_ONLY = true;
 EXRLoader.CUBE_MAP_SIZE = 512;
+
+EXRLoader.STRINGS = {
+  
+}
 
 EXRLoader.prototype._ctor = function()
 {
-
+    this.cubemap_upload_options = { };
+    this.spheremap_upload_options = { };
 }
 
 EXRLoader.prototype.parse = function( buffer )
@@ -76,6 +79,8 @@ EXRLoader.prototype.parse = function( buffer )
     else
       throw 'Cannot decompress unsupported compression';
 
+    console.log('Header:', EXRHeader);
+
   	return {
   		header: EXRHeader,
   		width: width,
@@ -127,7 +132,7 @@ EXRLoader.prototype.getTextureParams = function( texData )
     }
 }
 
-EXRLoader.prototype.generateTex = function( texParams )
+EXRLoader.prototype.generateTex = function( texParams, to_cubemap )
 {
     texParams = texParams || {};
 
@@ -143,7 +148,7 @@ EXRLoader.prototype.generateTex = function( texParams )
 
     var texture = null;
 
-    if(!texParams.is_cubemap || !EXRLoader.EM_ONLY)
+    if(!texParams.is_cubemap || texParams.to_texture2D)
     {
         // basic texture
         var options = {
@@ -161,11 +166,14 @@ EXRLoader.prototype.generateTex = function( texParams )
     // cubemap texture
     else
     {
+        console.log( "Getting cubemap faces and generating texture" );
         var square_length = texParams.pixelData.length / 12;
         var faces = this.getCubemapFaces(square_length, width, height, texParams.pixelData);
 
         width /= 4;
         height /= 3;
+
+        //Texture.setUploadOptions( this.cubemap_upload_options );
 
         var options = {
             format: pixelFormat,
@@ -180,14 +188,20 @@ EXRLoader.prototype.generateTex = function( texParams )
         texture.wrapT = texParams.wrapT || gl.CLAMP_TO_EDGE;
         texture.magFilter = texParams.magFilter || gl.LINEAR;
         texture.minFilter = texParams.minFilter || gl.LINEAR_MIPMAP_LINEAR;
+
+        // extra info
+        texture.is_cubemap = texParams.is_cubemap;
     }
-    // console.log(texture);
+    
+    if(to_cubemap)
+      return this.toCubemap( texture );
+
     return texture;
 }
 
-EXRLoader.prototype.toCubemap = function( tex, output, callback )
+// add callback in options
+EXRLoader.prototype.toCubemap = function( tex, callback )
 {
-    console.log("Converting to cubemap...");
     var size = EXRLoader.CUBE_MAP_SIZE || 512;
 
     //save state
@@ -205,9 +219,8 @@ EXRLoader.prototype.toCubemap = function( tex, output, callback )
     mesh.bindBuffers( shader );
     shader.bind();
 
-    var cubemap_texture = output;
-    if(!output)
-            cubemap_texture = new GL.Texture( size, size, { format: tex.format, texture_type: GL.TEXTURE_CUBE_MAP, type: gl.FLOAT } );
+    //Texture.setUploadOptions( this.cubemap_upload_options );
+    var cubemap_texture = new GL.Texture( size, size, { format: tex.format, texture_type: GL.TEXTURE_CUBE_MAP, type: gl.FLOAT } );
 
     var rot_matrix = GL.temp_mat3;
     var cams = GL.Texture.cubemap_camera_parameters;
@@ -235,6 +248,8 @@ EXRLoader.prototype.toCubemap = function( tex, output, callback )
 
     if(callback)
       callback(cubemap_texture);
+
+    return cubemap_texture;
 }
 
 EXRLoader.prototype.getCubemapFaces = function(size, width, height, pixelData)
@@ -297,26 +312,42 @@ EXRLoader.prototype.getCubemapFaces = function(size, width, height, pixelData)
             faces[F].set(line, it);
             it += line.length;
     }
-    return faces;
+
+    return sortFaces(faces, size);
 }
 
-function isPowerOfTwo(v)
+function sortFaces(faces, size)
 {
-	return ((Math.log(v) / Math.log(2)) % 1) == 0;
-}
+    var new_faces = [];
 
-// read exr file and run the EXRLoader
-function readFile( file, to_cubemap)
-{
-    var xhr = new XMLHttpRequest();
-    xhr.open( "GET", file, true );
-    xhr.responseType = "arraybuffer";
+    for(var i = 0; i < 6; i++)
+        new_faces[i] = new Float32Array( size );
 
-    xhr.onload = function( e ) {
-        load( this.response, to_cubemap );
-    };
+    for(var i = 0; i < 6; i++)
+    {
+        var face = faces[i],
+            it = size - 1;
 
-    xhr.send();
+        for(var j = 0; j < size; j+=3)
+        {
+          new_faces[i][j] = faces[i][it-2];
+          new_faces[i][j+1] = faces[i][it-1];
+          new_faces[i][j+2] = faces[i][it];
+          it-=3;
+        }
+    }
+
+    var ret = [];
+
+    ret.push( new_faces[EXRLoader.CUBE_MAP_NEGATIVE_X] );
+    ret.push( new_faces[EXRLoader.CUBE_MAP_NEGATIVE_Y] );
+    ret.push( new_faces[EXRLoader.CUBE_MAP_POSITIVE_Z] );
+
+    ret.push( new_faces[EXRLoader.CUBE_MAP_POSITIVE_X] );
+    ret.push( new_faces[EXRLoader.CUBE_MAP_POSITIVE_Y] );
+    ret.push( new_faces[EXRLoader.CUBE_MAP_NEGATIVE_Z] );
+
+    return ret;
 }
 
 // useful methods for parsing exr

@@ -11,9 +11,9 @@ function readFile( file, to_cubemap)
 
     var url = "";
     if(!file)
-        url = "../textures/" + document.getElementById("exr-input").value;
+        url = "../../textures/" + document.getElementById("exr-input").value;
     else
-        url = "../textures/" + file;
+        url = "../../textures/" + file;
 
     var xhr = new XMLHttpRequest();
     xhr.open( "GET", url, true );
